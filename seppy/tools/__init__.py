@@ -1,5 +1,7 @@
 import os
 import datetime
+from typing import Any
+from numpy._typing._array_like import NDArray
 import sunpy
 import warnings
 import matplotlib.pyplot as plt
@@ -144,8 +146,8 @@ class Event:
                        "bg_mean": self.bg_mean
                        }
 
-        if self.data_level == 'l3' and self.spacecraft != 'bepi':
-            raise Warning("Data level 'l3' is only supported for BepiColombo/SIXS-P data!")
+        if self.data_level == "l3" and self.spacecraft not in ["bepi", "soho"]:
+            raise Warning("Data level 'l3' is only supported for BepiColombo/SIXS-P and SOHO/EPHIN data!")
 
         # I think it could be worth considering to run self.choose_data(viewing) when the object is created,
         # because now it has to be run inside self.print_energies() to make sure that either
@@ -352,7 +354,7 @@ class Event:
 
                 return df, meta
 
-            if self.sensor == 'ephin':
+            if self.sensor == 'ephin' and data_level.lower() == "l2":
                 df, meta = soho_load(dataset="SOHO_COSTEP-EPHIN_L2-1MIN",
                                      startdate=self.start_date,
                                      enddate=self.end_date,
@@ -382,6 +384,17 @@ class Event:
                 # - add pos_timestamp here
 
                 return df, meta
+
+            if self.sensor == "ephin_l3" and data_level.lower() == "l3":
+                            df, meta = soho_load(dataset="SOHO_COSTEP-EPHIN_L3E-1MIN",
+                                                 startdate=self.start_date,
+                                                 enddate=self.end_date,
+                                                 path=self.data_path,
+                                                 resample=None,
+                                                 pos_timestamp="center",
+                                                 offline=self.offline)
+            
+                            return df, meta
 
         if self.spacecraft.lower() == 'wind':
 
@@ -559,6 +572,19 @@ class Event:
                                    self.data_level)
                 self.current_df_e = self.df
                 self.current_energies = self.meta
+
+            if self.sensor.lower() == "ephin_l3" and self.data_level.lower() == "l3":
+                            self.df, self.meta =\
+                                self.load_data(self.spacecraft, self.sensor, "None",
+                                               self.data_level)
+                            self.current_df_e = self.df
+                            self.current_energies = self.meta["Electron_ENERGY_LABL"]
+            elif self.sensor.lower() == "ephin_l3" and self.data_level.lower() != "l3":
+                raise Warning("SOHO/EPHIN L3 data is only available with data_level='l3'!")
+            else:
+                # Here self.sensor is not "ephin_l3", neither is it anything else that 
+                # is defined above, so the sensor is invalid.
+                raise Warning(f"Sensor {self.sensor} is not valid for SOHO!")
 
         if self.spacecraft.lower() == 'wind':
             if self.sensor.lower() == '3dp':
@@ -2453,6 +2479,8 @@ class Event:
                 energy_ranges = [val for val in self.current_energies['energy_labels'].values()][:4]
             if self.sensor.lower() in ("ephin-5", "ephin-15"):
                 energy_ranges = [value for _, value in self.current_energies.items()]
+            if self.sensor.lower() == "ephin_l3":
+                energy_ranges: list = [value for value in self.current_energies]
 
         if self.spacecraft == "psp":
             energy_dict = self.meta
@@ -2537,6 +2565,9 @@ class Event:
                     # SOHO/ERNE meta string has space, high value, space, energy_str
                     elif self.spacecraft == "soho" and self.sensor == "erne":
                         higher_bound, energy_unit = components[1], components[-1]
+
+                    elif self.spacecraft == "soho" and self.sensor == "ephin_l3":
+                        higher_bound, energy_unit = components[0], components[-1]
 
                     # Normal meta strs have two components: bounds and the energy unit
                     else:
@@ -2670,6 +2701,10 @@ class Event:
 
         if self.sensor in ["ephin-5", "ephin-15"]:
             channel_numbers = [5, 15]
+
+        if self.sensor == "ephin_l3":
+            channel_names: list[str] = [f"E{i}" for i in range(15)]
+            channel_numbers: list[int] = [int(name.split('E')[-1]) for name in channel_names]
 
         if self.sensor == "isois-epihi":
             channel_numbers = np.array([int(name.split('_')[-1]) for name in channel_names])
