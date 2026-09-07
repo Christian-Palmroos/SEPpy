@@ -145,3 +145,6 @@ data/
 !seppy/data/bepi_sixsp_instrumental_constants/
 !seppy/data/test/
 
+# Development notebooks
+seppy/_dev/*.ipynb
+
