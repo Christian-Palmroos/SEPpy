@@ -559,26 +559,26 @@ class Event:
                 # self.current_df_e = self.df.filter(like='Electron')
                 self.current_energies = self.meta
 
-            if self.sensor.lower() == 'ephin':
+            elif self.sensor.lower() == 'ephin':
                 self.df, self.meta =\
                     self.load_data(self.spacecraft, self.sensor, 'None',
                                    self.data_level)
                 self.current_df_e = self.df.filter(like='E')
                 self.current_energies = self.meta
 
-            if self.sensor.lower() in ("ephin-5", "ephin-15"):
+            elif self.sensor.lower() in ("ephin-5", "ephin-15"):
                 self.df, self.meta =\
                     self.load_data(self.spacecraft, self.sensor, 'None',
                                    self.data_level)
                 self.current_df_e = self.df
                 self.current_energies = self.meta
 
-            if self.sensor.lower() == "ephin_l3" and self.data_level.lower() == "l3":
+            elif self.sensor.lower() == "ephin_l3" and self.data_level.lower() == "l3":
                             self.df, self.meta =\
                                 self.load_data(self.spacecraft, self.sensor, "None",
                                                self.data_level)
                             self.current_df_e = self.df
-                            self.current_energies = self.meta["Electron_ENERGY_LABL"]
+                            self.current_energies = self.meta
             elif self.sensor.lower() == "ephin_l3" and self.data_level.lower() != "l3":
                 raise Warning("SOHO/EPHIN L3 data is only available with data_level='l3'!")
             else:
@@ -2480,7 +2480,7 @@ class Event:
             if self.sensor.lower() in ("ephin-5", "ephin-15"):
                 energy_ranges = [value for _, value in self.current_energies.items()]
             if self.sensor.lower() == "ephin_l3":
-                energy_ranges: list = [value for value in self.current_energies]
+                energy_ranges: list = [value for value in self.current_energies["Electron_ENERGY_LABL"]]
 
         if self.spacecraft == "psp":
             energy_dict = self.meta
@@ -2642,14 +2642,17 @@ class Event:
 
         return np.array(beta)*const.c.value
 
-    def print_energies(self, return_df=False):
+    def print_energies(self, return_df=False) -> None | pd.DataFrame:
         """
-        Prints out the channel name / energy range pairs
+        Prints out the channel name / energy range pairs, or returns a 
+        pandas dataframe with the same information.
 
         Parameter:
         ---------
         return_df : {bool} default False. If True, returns the df instead of displaying it.
         """
+
+        SENSORS_WITH_EFF_ENERGY: tuple[str] = ("sixs-p", "ephin_l3")
 
         from IPython.display import display
 
@@ -2724,7 +2727,7 @@ class Event:
 
         # Remove any duplicates from the numbers array, since some dataframes come with, e.g., 'ch_2' and 'err_ch_2'
         channel_numbers = np.unique(channel_numbers)
-        energy_strs = self.get_channel_energy_values("str")
+        energy_strs: list[str] = self.get_channel_energy_values("str")
 
         # The following behaviour has been fixed upstream. Keeping this here for
         # now in case someone is missing it.
@@ -2734,16 +2737,16 @@ class Event:
 
         # Assemble a pandas dataframe here for nicer presentation
         column_names = ("Channel", "Energy range")
-        if self.spacecraft == 'bepi' and self.data_level == 'l3':
+        if self.sensor in SENSORS_WITH_EFF_ENERGY:
             column_names = ("Channel", "Effective energy")
         column_data = {
             column_names[0]: channel_numbers,
             column_names[1]: energy_strs}
 
-        df = pd.DataFrame(data=column_data)
+        df: pd.DataFrame = pd.DataFrame(data=column_data)
 
         # Set the channel number as the index of the dataframe
-        df = df.set_index(column_names[0])
+        df: pd.DataFrame = df.set_index(column_names[0])
 
         # Finally display the dataframe such that ALL rows are shown
         if not return_df:
