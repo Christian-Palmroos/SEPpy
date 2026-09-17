@@ -574,6 +574,8 @@ class Event:
                 self.current_energies = self.meta
 
             elif self.sensor.lower() == "ephin_l3" and self.data_level.lower() == "l3":
+                            if self.species.lower() == 'p':
+                                raise Warning("SOHO/EPHIN L3 data is only available for electrons, not protons!")
                             self.df, self.meta =\
                                 self.load_data(self.spacecraft, self.sensor, "None",
                                                self.data_level)
