@@ -1791,6 +1791,10 @@ class Event:
 
                 s_identifier = "electrons"
                 # raise Warning('SOHO/EPHIN is not implemented yet in the dynamic spectrum tool!')
+            if instrument.lower() == "ephin_l3":
+                # Hard-coding the channel selection, not the most elegant solution. 
+                particle_data: pd.DataFrame = self.current_df_e.copy(deep=True).loc[:, [f"E{i}" for i in range(15)]]
+                s_identifier = "electrons"
 
         if spacecraft == "psp":
             if instrument.lower() == "isois-epihi":
@@ -2567,6 +2571,11 @@ class Event:
                 try:
                     lower_bound, temp = energy_str.split('-')
                 except ValueError:
+
+                    # For level 3 EPHIN data product these are effective energies, not energy ranges.
+                    if self.sensor=="ephin_l3":
+                        eff_energies = np.array([float(elem.split(' ')[0]) for elem in energy_ranges])
+                        return eff_energies * 1e6 # Convert MeV to eV
                     continue
 
                 # Generalize a bit here, since temp.split(' ') may yield a variety of different lists
@@ -2580,9 +2589,6 @@ class Event:
                     # SOHO/ERNE meta string has space, high value, space, energy_str
                     elif self.spacecraft == "soho" and self.sensor == "erne":
                         higher_bound, energy_unit = components[1], components[-1]
-
-                    elif self.spacecraft == "soho" and self.sensor == "ephin_l3":
-                        higher_bound, energy_unit = components[0], components[-1]
 
                     # Normal meta strs have two components: bounds and the energy unit
                     else:
