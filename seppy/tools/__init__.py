@@ -1862,7 +1862,12 @@ class Event:
         time = df.index
 
         # The low and high ends of each energy channel
-        e_lows, e_highs = self.get_channel_energy_values()  # this function return energy in eVs
+        if self.sensor.lower() != "ephin_l3":
+            e_lows, e_highs = self.get_channel_energy_values()  # this function return energy in eVs
+        else:
+            # For EPHIN level 3 data product, these are effective energies
+            e_lows = self.get_channel_energy_values()  # this function return energy in eVs
+            e_highs = e_lows  # In level 3, low and high ends are the same
 
         # The mean energy of each channel in eVs
         mean_energies = np.sqrt(np.multiply(e_lows, e_highs))
