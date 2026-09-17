@@ -212,12 +212,12 @@ class Event:
                        "bg_mean": self.bg_mean
                        }
 
-    def update_viewing(self, viewing):
+    def update_viewing(self, viewing) -> None:
         """
         :meta private:
         """
 
-        invalid_viewing_msg = f"{viewing} is an invalid viewing direction for {self.spacecraft}/{self.sensor}!"
+        invalid_viewing_msg: str = f"{viewing} is an invalid viewing direction for {self.spacecraft}/{self.sensor}!"
 
         if self.spacecraft != "wind":
 
@@ -1613,7 +1613,7 @@ class Event:
     # Deactivated in August 2025. Remove later if no problems occur.
     # analyse = copy.copy(find_onset)
 
-    def dynamic_spectrum(self, view, cmap: str = 'magma', xlim: tuple = None, resample: str = None, save: bool = False,
+    def dynamic_spectrum(self, view=None, cmap: str = 'magma', xlim: tuple = None, resample: str = None, save: bool = False,
                          other=None) -> None:
         """
         Shows all the different energy channels in a single 2D plot, and color codes the corresponding intensity*energy^2 by a colormap.
@@ -1621,7 +1621,7 @@ class Event:
         Parameters:
         -----------
         view : str or None
-                The viewing direction of the sensor
+                The viewing direction of the sensor. Default None, which will then pick the last used viewing.
         cmap : str, default='magma'
                 The colormap for the dynamic spectrum plot
         xlim : 2-tuple of datetime strings (str, str)
@@ -1715,6 +1715,9 @@ class Event:
 
         # This method has to be run before doing anything else to make sure that the viewing is correct
         self.choose_data(view)
+
+        if view is None:
+            view: None | str = self.viewing
 
         # Check that the data that was loaded is valid. If not, abort with warning.
         self.validate_data()
