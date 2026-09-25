@@ -144,3 +144,4 @@ dmypy.json
 data/
 !seppy/data/bepi_sixsp_instrumental_constants/
 !seppy/data/test/
+
