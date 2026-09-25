@@ -705,6 +705,7 @@ def soho_ephin_l3_loader(startdate, enddate, resample=None, path=None, all_colum
                                                      'upper_E': np.nan,
                                                      'DE': np.nan
                                                      })
+    channels_dict_df_e.index = [f'E{i}' for i in range(15)]
 
     metadata = {
                 'General_INFO': 'https://doi.org/10.5281/zenodo.18225155',
