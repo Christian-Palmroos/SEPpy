@@ -1713,11 +1713,16 @@ class Event:
         # Boolean value for checking if y-axis requires a white stripe
         is_solohetions = (spacecraft == "solo" and instrument == "het" and species == 'p')
 
-        # This method has to be run before doing anything else to make sure that the viewing is correct
-        self.choose_data(view)
-
+        # Check if a viewing was provided, if not, use the last used viewing, which may still be None
+        # if the instrument only has one aperture.
         if view is None:
             view: None | str = self.viewing
+
+        # This method has to be run before doing anything else to make sure that the viewing is correct.
+        # If no viewing was provided for the method, then view will at this line be the last used viewing,
+        # which most probably is correct because the class may not be initialized with an incorrect viewing. 
+        # If a viewing was provided, it is validated here. If it is invalid, an exception is raised.
+        self.choose_data(view)
 
         # Check that the data that was loaded is valid. If not, abort with warning.
         self.validate_data()
@@ -1866,8 +1871,8 @@ class Event:
             e_lows, e_highs = self.get_channel_energy_values()  # this function return energy in eVs
         else:
             # For EPHIN level 3 data product, these are effective energies
-            e_lows = self.get_channel_energy_values()  # this function return energy in eVs
-            e_highs = e_lows  # In level 3, low and high ends are the same
+            # Here the e_lows and e_highs are two identical arrays
+            e_lows, e_highs = self.get_channel_energy_values()  # this function return energy in eVs
 
         # The mean energy of each channel in eVs
         mean_energies = np.sqrt(np.multiply(e_lows, e_highs))
@@ -2580,7 +2585,7 @@ class Event:
                     # For level 3 EPHIN data product these are effective energies, not energy ranges.
                     if self.sensor=="ephin_l3":
                         eff_energies = np.array([float(elem.split(' ')[0]) for elem in energy_ranges])
-                        return eff_energies * 1e6 # Convert MeV to eV
+                        return eff_energies * 1e6, eff_energies * 1e6 # Convert MeV to eV
                     continue
 
                 # Generalize a bit here, since temp.split(' ') may yield a variety of different lists
@@ -2732,7 +2737,9 @@ class Event:
             channel_numbers = [5, 15]
 
         if self.sensor == "ephin_l3":
-            channel_names: list[str] = [f"E{i}" for i in range(15)]
+            # Based on the fact that if a column name contains '_', is it not an intensity channel but instead something
+            # else, and that all intensity channels start with an 'E'.
+            channel_names: list[str] = [name for name in channel_names if name[0]=='E' and not '_' in name]
             channel_numbers: list[int] = [int(name.split('E')[-1]) for name in channel_names]
 
         if self.sensor == "isois-epihi":
