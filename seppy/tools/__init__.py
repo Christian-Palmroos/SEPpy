@@ -304,7 +304,7 @@ class Event:
                     df_e: pd.DataFrame = df_all.filter(like=f"Electron_Flux_{SOLO_L3_VIEWINGS.get(viewing)}")
                     df_i: pd.DataFrame = df_all.filter(like=f"Ion_Flux_{SOLO_L3_VIEWINGS.get(viewing)}")
 
-                    return df_i, df_e, meta
+                    return df_i, df_e, energies
 
                 # Here data level was not l2 nor was it l3 -> raise a warning
                 else:
@@ -2720,8 +2720,11 @@ class Event:
                 channel_numbers = np.array([int(name.split('_')[-1]) for name in channel_names])
 
             if self.sensor == "ept":
-                channel_names = [name[1] for name in channel_names[:SOLO_EPT_CHANNELS_AMOUNT]]
-                channel_numbers = np.array([int(name.split('_')[-1]) for name in channel_names])
+                if self.data_level == "l2":
+                    channel_names = [name[1] for name in channel_names[:SOLO_EPT_CHANNELS_AMOUNT]]
+                    channel_numbers = np.array([int(name.split('_')[-1]) for name in channel_names])
+                else:
+                    channel_numbers = np.array([int(name.split('_')[-1]) for name in channel_names])
 
             if self.sensor == "het":
                 channel_names = [name[1] for name in channel_names[:SOLO_HET_CHANNELS_AMOUNT]]
